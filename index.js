@@ -1,5 +1,7 @@
 // index.js
 
+// ********** DECLARAÇÕES **********
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -41,35 +43,36 @@ app.post('/license/activate', async (req, res) => {
   if (!license) {
     return res.status(404).json({ error: 'Serial não encontrado.' });
   }
-  if (!license.isActive) {
+  
+  if (!license.ativo) {
     return res.status(403).json({
-      error: license.revokedReason || 'Esta licença foi desativada.',
+      error: 'Esta licença foi desativada.',
     });
   }
-  if (license.expiresAt && license.expiresAt < new Date()) {
+
+  if (license.expiracao && license.expiracao < new Date()) {
     return res.status(403).json({ error: 'Licença expirada.' });
   }
 
-  // Já vinculada a OUTRA máquina
-  if (license.machineId && license.machineId !== machineId) {
+  if (license.id_maquina && license.id_maquina !== machineId) {
     return res.status(409).json({
       error:
         'Esta licença já está em uso em outra máquina. Desative-a lá antes de ativar aqui.',
     });
   }
 
-  // Primeira ativação ou reativação na MESMA máquina
-  license.machineId = machineId;
-  if (!license.activatedAt) {
-    license.activatedAt = new Date();
+  license.id_maquina = machineId;
+  if (!license.ultima_ativacao) {
+    license.ultima_ativacao = new Date();
   }
-  license.activationHistory.push({ machineId, action: 'ACTIVATE' });
+  
+  license.historico_ativacoes.push({ id_maquina: machineId, acao: 'ACTIVATE' });
   await license.save();
 
   res.json({
     ok: true,
     message: 'Licença ativada com sucesso.',
-    plan: license.plan,
+    plan: license.plano,
   });
 });
 
@@ -82,14 +85,14 @@ app.post('/license/deactivate', async (req, res) => {
   if (!license) {
     return res.status(404).json({ error: 'Serial não encontrado.' });
   }
-  if (license.machineId !== machineId) {
+  if (license.id_maquina !== machineId) {
     return res
       .status(403)
       .json({ error: 'Esta máquina não é a ativa para este serial.' });
   }
 
-  license.activationHistory.push({ machineId, action: 'DEACTIVATE' });
-  license.machineId = null;
+  license.historico_ativacoes.push({ id_maquina: machineId, acao: 'DEACTIVATE' });
+  license.id_maquina = null;
   await license.save();
 
   res.json({ ok: true, message: 'Licença desativada.' });
@@ -102,14 +105,14 @@ app.post('/license/validate', async (req, res) => {
 
   const license = await License.findOne({ licenseKey });
 
-  if (!license || !license.isActive || license.machineId !== machineId) {
+  if (!license || !license.ativo || license.id_maquina !== machineId) {
     return res.status(403).json({ valid: false });
   }
-  if (license.expiresAt && license.expiresAt < new Date()) {
+  if (license.expiracao && license.expiracao < new Date()) {
     return res.status(403).json({ valid: false, reason: 'expired' });
   }
 
-  res.json({ valid: true, plan: license.plan });
+  res.json({ valid: true, plan: license.plano });
 });
 
 // ********** INICIAR SERVIDOR **********
