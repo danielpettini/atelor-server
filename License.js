@@ -4,11 +4,11 @@ const mongoose = require('mongoose');
 
 // ********** SUBDOCUMENTO: HISTÓRICO DE ATIVAÇÕES **********
 
-const activationLogSchema = new mongoose.Schema(
+const registroAtivacaoSchema = new mongoose.Schema(
   {
-    machineId: { type: String, required: true },
-    action: { type: String, enum: ['ACTIVATE', 'DEACTIVATE'], required: true },
-    date: { type: Date, default: Date.now },
+    id_maquina: { type: String, required: true },
+    acao: { type: String, enum: ['ACTIVATE', 'DEACTIVATE'], required: true },
+    data: { type: Date, default: Date.now },
   },
   { _id: false }
 );
@@ -16,30 +16,24 @@ const activationLogSchema = new mongoose.Schema(
 // ********** SCHEMA PRINCIPAL **********
 
 const licenseSchema = new mongoose.Schema({
+  ativo: { type: Boolean, default: true },  
   licenseKey: { type: String, required: true, unique: true },
-
-  plan: {
+  plano: {
     type: String,
-    enum: ['BASICO', 'INTERMEDIARIO', 'VIP'],
-    default: 'BASICO',
+    enum: ['BASICO', 'PRO', 'GRATIS'],
+    required: true,
   },
-
-  clientName: { type: String, default: '' },
-  clientEmail: { type: String, required: true },
-
-  machineId: { type: String, default: null },
-
-  isActive: { type: Boolean, default: true },
-  revokedReason: { type: String, default: null },
-
-  expiresAt: { type: Date, default: null },
-
-  activatedAt: { type: Date, default: null },
-  activationHistory: { type: [activationLogSchema], default: [] },
-
-  createdAt: { type: Date, default: Date.now },
+  nome_cliente: { type: String, default: '' },
+  email_cliente: { type: String, required: true },
+  whatsapp: { type: String, default: '' },
+  endereco: { type: String, default: '' },
+  criado_em: { type: Date, default: Date.now },
+  ultima_ativacao: { type: Date, default: null },  
+  historico_ativacoes: { type: [registroAtivacaoSchema], default: [] },
+  expiracao: { type: Date, default: null }, 
+  id_maquina: { type: String, default: null },
 });
 
-licenseSchema.index({ clientEmail: 1 });
+licenseSchema.index({ email_cliente: 1 });
 
 module.exports = mongoose.model('License', licenseSchema, 'licenses');
