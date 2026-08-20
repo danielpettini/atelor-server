@@ -20,7 +20,7 @@ const licenseSchema = new mongoose.Schema({
   licenseKey: { type: String, required: true, unique: true },
   plano: {
     type: String,
-    enum: ['BASICO', 'PRO', 'GRATIS'],
+    enum: ['BASICO', 'PRO', 'VIP'],
     required: true,
   },
   nome_cliente: { type: String, default: '' },
