@@ -24,6 +24,7 @@ const licenseSchema = new mongoose.Schema({
     required: true,
   },
   nome_cliente: { type: String, default: '' },
+  apelido: { type: String, default: '' },
   email_cliente: { type: String, required: true },
   whatsapp: { type: String, default: '' },
   endereco: { type: String, default: '' },
