@@ -73,6 +73,7 @@ app.post('/license/activate', async (req, res) => {
     ok: true,
     message: 'Licença ativada com sucesso.',
     plan: license.plano,
+    latestVersion: "1.0.1"
   });
 });
 
@@ -102,17 +103,18 @@ app.post('/license/deactivate', async (req, res) => {
 
 app.post('/license/validate', async (req, res) => {
   const { licenseKey, machineId } = req.body;
-
   const license = await License.findOne({ licenseKey });
-
   if (!license || !license.ativo || license.id_maquina !== machineId) {
     return res.status(403).json({ valid: false });
   }
   if (license.expiracao && license.expiracao < new Date()) {
     return res.status(403).json({ valid: false, reason: 'expired' });
   }
-
-  res.json({ valid: true, plan: license.plano });
+  res.json({ 
+    valid: true, 
+    plan: license.plano,
+    latestVersion: "1.0.1"
+  });
 });
 
 // ********** INICIAR SERVIDOR **********
