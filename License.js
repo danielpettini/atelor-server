@@ -1,40 +1,42 @@
 // License.js
 
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 // ********** SUBDOCUMENTO: HISTÓRICO DE ATIVAÇÕES **********
 
 const registroAtivacaoSchema = new mongoose.Schema(
   {
     id_maquina: { type: String, required: true },
-    acao: { type: String, enum: ['ACTIVATE', 'DEACTIVATE'], required: true },
+    acao: { type: String, enum: ["ACTIVATE", "DEACTIVATE"], required: true },
     data: { type: Date, default: Date.now },
   },
-  { _id: false }
+  { _id: false },
 );
 
 // ********** SCHEMA PRINCIPAL **********
 
-const licenseSchema = new mongoose.Schema({
-  ativo: { type: Boolean, default: true },  
-  licenseKey: { type: String, required: true, unique: true },
-  plano: {
-    type: String,
-    enum: ['BASICO', 'PRO', 'VIP'],
-    required: true,
+const licenseSchema = new mongoose.Schema(
+  {
+    ativo: { type: Boolean, default: true, index: true },
+    licenseKey: { type: String, required: true, unique: true, index: true },
+    plano: {
+      type: String,
+      enum: ["BASICO", "PRO", "VIP"],
+      required: true,
+    },
+    nome_cliente: { type: String, default: "" },
+    apelido: { type: String, default: "" },
+    email_cliente: { type: String, required: true, index: true },
+    whatsapp: { type: String, default: "" },
+    endereco: { type: String, default: "" },
+    ultima_ativacao: { type: Date, default: null },
+    historico_ativacoes: { type: [registroAtivacaoSchema], default: [] },
+    expiracao: { type: Date, default: null, index: true },
+    id_maquina: { type: String, default: null, index: true },
   },
-  nome_cliente: { type: String, default: '' },
-  apelido: { type: String, default: '' },
-  email_cliente: { type: String, required: true },
-  whatsapp: { type: String, default: '' },
-  endereco: { type: String, default: '' },
-  criado_em: { type: Date, default: Date.now },
-  ultima_ativacao: { type: Date, default: null },  
-  historico_ativacoes: { type: [registroAtivacaoSchema], default: [] },
-  expiracao: { type: Date, default: null }, 
-  id_maquina: { type: String, default: null },
-});
+  {
+    timestamps: { createdAt: "criado_em", updatedAt: "atualizado_em" },
+  },
+);
 
-licenseSchema.index({ email_cliente: 1 });
-
-module.exports = mongoose.model('License', licenseSchema, 'licenses');
+module.exports = mongoose.model("License", licenseSchema, "licenses");

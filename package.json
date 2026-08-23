@@ -1,10 +1,12 @@
 {
   "name": "atelor-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Servidor de validação de licenças do ATELOR",
   "main": "index.js",
+  "private": true,
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "node --watch index.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
