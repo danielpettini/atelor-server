@@ -1,6 +1,6 @@
 {
   "name": "atelor-server",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Servidor de validação de licenças do ATELOR",
   "main": "index.js",
   "private": true,
