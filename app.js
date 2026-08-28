@@ -439,6 +439,7 @@ function createApp({
 
 module.exports = {
   HISTORY_LIMIT,
+  activeExpirationFilter,
   createApp,
   createCorsOptions,
   createRateLimiters,

@@ -1,8 +1,13 @@
 const assert = require("node:assert/strict");
 const { once } = require("node:events");
 const test = require("node:test");
+const mongoose = require("mongoose");
 
-const { createApp, resolveAllowedOrigins } = require("../app");
+const {
+  activeExpirationFilter,
+  createApp,
+  resolveAllowedOrigins,
+} = require("../app");
 const { normalizeMachineId } = require("../validation");
 
 const LICENSE_KEY = "ATELOR-TEST-0001";
@@ -212,6 +217,25 @@ test("machine ID legado aceita somente de 8 a 32 caracteres", () => {
   );
   assert.throws(() => normalizeMachineId(`pc-${"a".repeat(7)}`), /inválida/);
   assert.throws(() => normalizeMachineId(`pc-${"a".repeat(33)}`), /inválida/);
+});
+
+test("sanitizeFilter preserva os operadores confiáveis de expiração", () => {
+  const now = new Date("2026-08-28T12:00:00.000Z");
+  const filter = activeExpirationFilter(now);
+
+  mongoose.sanitizeFilter(filter);
+
+  const comparableBranches = filter.$or.map(({ expiracao }) => ({
+    expiracao:
+      expiracao && typeof expiracao === "object" && !(expiracao instanceof Date)
+        ? Object.fromEntries(Object.entries(expiracao))
+        : expiracao,
+  }));
+  assert.deepEqual(comparableBranches, [
+    { expiracao: null },
+    { expiracao: { $exists: false } },
+    { expiracao: { $gt: now } },
+  ]);
 });
 
 test("aceita formatos históricos de serial sem restringir pontuação ou Unicode", async () => {
