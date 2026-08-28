@@ -2,11 +2,12 @@ const assert = require("node:assert/strict");
 const { once } = require("node:events");
 const test = require("node:test");
 const mongoose = require("mongoose");
+const License = require("../License");
 
 const {
-  activeExpirationFilter,
   createApp,
   resolveAllowedOrigins,
+  unchangedLicenseFieldFilter,
 } = require("../app");
 const { normalizeMachineId } = require("../validation");
 
@@ -56,6 +57,19 @@ function matchesFilter(document, filter) {
     }
     if (key === "$or") {
       return condition.some((part) => matchesFilter(document, part));
+    }
+    if (key === "$expr") {
+      const [fieldExpression, literalExpression] = condition.$eq ?? [];
+      const field = fieldExpression?.$getField?.field?.$literal;
+      if (
+        typeof field !== "string" ||
+        fieldExpression.$getField.input !== "$$CURRENT" ||
+        !literalExpression ||
+        !Object.prototype.hasOwnProperty.call(literalExpression, "$literal")
+      ) {
+        throw new Error("Expressão de teste não implementada.");
+      }
+      return valuesEqual(document[field], literalExpression.$literal);
     }
     return matchesCondition(
       document[key],
@@ -219,23 +233,102 @@ test("machine ID legado aceita somente de 8 a 32 caracteres", () => {
   assert.throws(() => normalizeMachineId(`pc-${"a".repeat(33)}`), /inválida/);
 });
 
-test("sanitizeFilter preserva os operadores confiáveis de expiração", () => {
-  const now = new Date("2026-08-28T12:00:00.000Z");
-  const filter = activeExpirationFilter(now);
+test("sanitizeFilter preserva snapshots BSON exatos da licença", () => {
+  const expiration = "2099-12-31T23:59:59.000Z";
+  const activeSnapshot = unchangedLicenseFieldFilter("ativo", true);
+  const expirationSnapshot = unchangedLicenseFieldFilter(
+    "expiracao",
+    expiration,
+  );
+  const nullSnapshot = unchangedLicenseFieldFilter("expiracao", null);
+  const missingSnapshot = unchangedLicenseFieldFilter("expiracao", undefined);
 
-  mongoose.sanitizeFilter(filter);
+  for (const filter of [
+    activeSnapshot,
+    expirationSnapshot,
+    nullSnapshot,
+    missingSnapshot,
+  ]) {
+    mongoose.sanitizeFilter(filter);
+  }
 
-  const comparableBranches = filter.$or.map(({ expiracao }) => ({
-    expiracao:
-      expiracao && typeof expiracao === "object" && !(expiracao instanceof Date)
-        ? Object.fromEntries(Object.entries(expiracao))
-        : expiracao,
-  }));
-  assert.deepEqual(comparableBranches, [
-    { expiracao: null },
-    { expiracao: { $exists: false } },
-    { expiracao: { $gt: now } },
-  ]);
+  assert.deepEqual(Object.fromEntries(Object.entries(activeSnapshot.$expr)), {
+    $eq: [
+      {
+        $getField: {
+          field: { $literal: "ativo" },
+          input: "$$CURRENT",
+        },
+      },
+      { $literal: true },
+    ],
+  });
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(expirationSnapshot.$expr)),
+    {
+      $eq: [
+        {
+          $getField: {
+            field: { $literal: "expiracao" },
+            input: "$$CURRENT",
+          },
+        },
+        { $literal: expiration },
+      ],
+    },
+  );
+  assert.equal(nullSnapshot.$or[0].expiracao, null);
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(nullSnapshot.$or[1].expiracao)),
+    { $exists: false },
+  );
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(missingSnapshot.expiracao)),
+    { $exists: false },
+  );
+  assert.throws(
+    () => unchangedLicenseFieldFilter("id_maquina", null),
+    /não permitido/,
+  );
+});
+
+test("Query.cast do modelo real não converte snapshots BSON legados", () => {
+  const expirationDate = new Date("2099-12-31T23:59:59.000Z");
+  const cases = [
+    ["ativo", "true"],
+    ["ativo", 1],
+    ["expiracao", expirationDate.toISOString()],
+    ["expiracao", true],
+    ["expiracao", expirationDate],
+  ];
+
+  for (const [field, originalValue] of cases) {
+    const filter = unchangedLicenseFieldFilter(field, originalValue);
+    mongoose.sanitizeFilter(filter);
+
+    const query = License.findOneAndUpdate(filter, {
+      $set: { id_maquina: MACHINE_A },
+    });
+    query.cast(License);
+
+    const [fieldExpression, literalExpression] =
+      query.getFilter().$expr.$eq;
+    assert.deepEqual(fieldExpression, {
+      $getField: {
+        field: { $literal: field },
+        input: "$$CURRENT",
+      },
+    });
+
+    const castValue = literalExpression.$literal;
+    assert.equal(typeof castValue, typeof originalValue);
+    if (originalValue instanceof Date) {
+      assert.ok(castValue instanceof Date);
+      assert.equal(castValue.getTime(), originalValue.getTime());
+    } else {
+      assert.equal(castValue, originalValue);
+    }
+  }
 });
 
 test("aceita formatos históricos de serial sem restringir pontuação ou Unicode", async () => {
@@ -377,6 +470,26 @@ test("activate é atômico, idempotente e limita o histórico", async () => {
   assert.equal(stored.id_maquina, MACHINE_A);
   assert.equal(stored.historico_ativacoes.length, 200);
   assert.equal(stored.historico_ativacoes.at(-1).acao, "ACTIVATE");
+  assert.equal(model.updateCount, 1);
+});
+
+test("activate aceita expiração futura legada em string sem perder atomicidade", async () => {
+  const expiration = "2099-12-31T23:59:59.000Z";
+  const model = createFakeLicenseModel([
+    baseLicense({ expiracao: expiration }),
+  ]);
+
+  await withServer({ LicenseModel: model }, async (baseUrl) => {
+    const response = await postJson(baseUrl, "/license/activate", {
+      licenseKey: LICENSE_KEY,
+      machineId: MACHINE_A,
+    });
+    assert.equal(response.status, 200);
+  });
+
+  const stored = model.get();
+  assert.equal(stored.expiracao, expiration);
+  assert.equal(stored.id_maquina, MACHINE_A);
   assert.equal(model.updateCount, 1);
 });
 

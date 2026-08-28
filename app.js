@@ -129,18 +129,49 @@ function createRateLimiters(options = {}) {
 }
 
 function isExpired(license, now) {
-  return Boolean(
-    license.expiracao && new Date(license.expiracao).getTime() <= now.getTime(),
+  const expiration = license?.expiracao;
+  if (expiration === null || expiration === undefined || expiration === "") {
+    return false;
+  }
+
+  const expirationTime = new Date(expiration).getTime();
+  return (
+    !Number.isFinite(expirationTime) || expirationTime <= now.getTime()
   );
 }
 
-function activeExpirationFilter(now) {
+const SNAPSHOT_LICENSE_FIELDS = new Set(["ativo", "expiracao"]);
+
+function unchangedLicenseFieldFilter(field, value) {
+  if (!SNAPSHOT_LICENSE_FIELDS.has(field)) {
+    throw new TypeError("Campo de licença não permitido no snapshot atômico.");
+  }
+
+  if (value === undefined) {
+    return { [field]: mongoose.trusted({ $exists: false }) };
+  }
+
+  if (value === null) {
+    return {
+      $or: [
+        { [field]: null },
+        { [field]: mongoose.trusted({ $exists: false }) },
+      ],
+    };
+  }
+
   return {
-    $or: [
-      { expiracao: null },
-      { expiracao: mongoose.trusted({ $exists: false }) },
-      { expiracao: mongoose.trusted({ $gt: now }) },
-    ],
+    $expr: mongoose.trusted({
+      $eq: [
+        {
+          $getField: {
+            field: { $literal: field },
+            input: "$$CURRENT",
+          },
+        },
+        { $literal: value },
+      ],
+    }),
   };
 }
 
@@ -262,10 +293,10 @@ function createApp({
         LicenseModel,
         {
           _id: license._id,
-          ativo: true,
           $and: [
             { $or: [{ id_maquina: null }, { id_maquina: "" }] },
-            activeExpirationFilter(currentTime),
+            unchangedLicenseFieldFilter("ativo", license.ativo),
+            unchangedLicenseFieldFilter("expiracao", license.expiracao),
           ],
         },
         {
@@ -371,9 +402,11 @@ function createApp({
         LicenseModel,
         {
           _id: license._id,
-          ativo: true,
           id_maquina: legacyMachineId,
-          ...activeExpirationFilter(currentTime),
+          $and: [
+            unchangedLicenseFieldFilter("ativo", license.ativo),
+            unchangedLicenseFieldFilter("expiracao", license.expiracao),
+          ],
         },
         {
           $set: { id_maquina: machineId },
@@ -439,10 +472,10 @@ function createApp({
 
 module.exports = {
   HISTORY_LIMIT,
-  activeExpirationFilter,
   createApp,
   createCorsOptions,
   createRateLimiters,
   parseTrustProxyHops,
   resolveAllowedOrigins,
+  unchangedLicenseFieldFilter,
 };
