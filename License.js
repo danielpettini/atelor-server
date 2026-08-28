@@ -6,8 +6,13 @@ const mongoose = require("mongoose");
 
 const registroAtivacaoSchema = new mongoose.Schema(
   {
-    id_maquina: { type: String, required: true },
-    acao: { type: String, enum: ["ACTIVATE", "DEACTIVATE"], required: true },
+    id_maquina: { type: String, required: true, maxlength: 128 },
+    id_maquina_anterior: { type: String, default: null, maxlength: 128 },
+    acao: {
+      type: String,
+      enum: ["ACTIVATE", "DEACTIVATE", "MIGRATE"],
+      required: true,
+    },
     data: { type: Date, default: Date.now },
   },
   { _id: false },
@@ -32,7 +37,7 @@ const licenseSchema = new mongoose.Schema(
     ultima_ativacao: { type: Date, default: null },
     historico_ativacoes: { type: [registroAtivacaoSchema], default: [] },
     expiracao: { type: Date, default: null, index: true },
-    id_maquina: { type: String, default: null, index: true },
+    id_maquina: { type: String, default: null, maxlength: 128, index: true },
   },
   {
     timestamps: { createdAt: "criado_em", updatedAt: "atualizado_em" },
