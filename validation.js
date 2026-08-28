@@ -1,4 +1,5 @@
-const LICENSE_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{7,127}$/;
+const MAX_LICENSE_KEY_LENGTH = 256;
+const LICENSE_KEY_CONTROL_PATTERN = /[\u0000-\u001F\u007F-\u009F]/u;
 const NATIVE_MACHINE_ID_PATTERN = /^[a-f0-9]{64}$/;
 const LEGACY_MACHINE_ID_PATTERN = /^pc-[a-z0-9]{8,32}$/;
 
@@ -36,8 +37,12 @@ function normalizeLicenseKey(value) {
   if (typeof value !== "string") {
     throw new RequestValidationError("A chave de licença é inválida.");
   }
+  if (LICENSE_KEY_CONTROL_PATTERN.test(value)) {
+    throw new RequestValidationError("A chave de licença é inválida.");
+  }
   const normalized = value.trim();
-  if (!LICENSE_KEY_PATTERN.test(normalized)) {
+  const length = Array.from(normalized).length;
+  if (length < 1 || length > MAX_LICENSE_KEY_LENGTH) {
     throw new RequestValidationError("A chave de licença é inválida.");
   }
   return normalized;
@@ -95,7 +100,7 @@ function parseLicenseCredentials(body, { allowLegacyProof = false } = {}) {
 
 module.exports = {
   LEGACY_MACHINE_ID_PATTERN,
-  LICENSE_KEY_PATTERN,
+  MAX_LICENSE_KEY_LENGTH,
   NATIVE_MACHINE_ID_PATTERN,
   RequestValidationError,
   normalizeLicenseKey,

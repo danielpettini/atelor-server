@@ -214,6 +214,66 @@ test("machine ID legado aceita somente de 8 a 32 caracteres", () => {
   assert.throws(() => normalizeMachineId(`pc-${"a".repeat(33)}`), /inválida/);
 });
 
+test("aceita formatos históricos de serial sem restringir pontuação ou Unicode", async () => {
+  const historicalFormats = [
+    "123456",
+    "Senha@123!",
+    "cliente.teste@example.com",
+    "Plano VIP 2026",
+    "ATELOR/PRO+CLIENTE=01",
+    "Ação-Promoção#1",
+  ];
+
+  await withServer(
+    { LicenseModel: createFakeLicenseModel([]) },
+    async (baseUrl) => {
+      for (const licenseKey of historicalFormats) {
+        const response = await postJson(baseUrl, "/license/activate", {
+          licenseKey,
+          machineId: MACHINE_A,
+        });
+        assert.equal(
+          response.status,
+          404,
+          `O formato histórico ${JSON.stringify(licenseKey)} deve chegar à busca`,
+        );
+        assert.equal((await response.json()).error, "Serial não encontrado.");
+      }
+    },
+  );
+});
+
+test("rejeita serial vazio, controles, tamanho excessivo e tipos não escalares", async () => {
+  const invalidLicenseKeys = [
+    "",
+    "   ",
+    "ATELOR\nTESTE",
+    "ATELOR\u0000TESTE",
+    "ATELOR\u0085TESTE",
+    "x".repeat(257),
+    { $ne: null },
+    ["ATELOR-TESTE"],
+    null,
+  ];
+
+  await withServer(
+    { LicenseModel: createFakeLicenseModel([]) },
+    async (baseUrl) => {
+      for (const licenseKey of invalidLicenseKeys) {
+        const response = await postJson(baseUrl, "/license/activate", {
+          licenseKey,
+          machineId: MACHINE_A,
+        });
+        assert.equal(
+          response.status,
+          400,
+          `O serial inválido ${JSON.stringify(licenseKey)} deve ser rejeitado`,
+        );
+      }
+    },
+  );
+});
+
 test("rejeita NoSQL injection, campos extras e machine ID inválido", async () => {
   const model = createFakeLicenseModel([baseLicense()]);
   await withServer({ LicenseModel: model }, async (baseUrl) => {
