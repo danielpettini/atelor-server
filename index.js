@@ -1,8 +1,14 @@
+// atelor-server/index.js
+
 require("dotenv").config();
+
+// ********** IMPORTAÇÕES **********
 
 const mongoose = require("mongoose");
 
 const { createApp } = require("./app");
+
+// ********** MÓDULO PRINCIPAL **********
 
 mongoose.set("sanitizeFilter", true);
 

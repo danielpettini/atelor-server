@@ -1,5 +1,11 @@
+// atelor-server/updateMetadata.js
+
+// ********** IMPORTAÇÕES **********
+
 const fs = require("fs");
 const path = require("path");
+
+// ********** MÓDULO PRINCIPAL **********
 
 const MAX_UPDATE_BYTES = 512 * 1024 * 1024;
 const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;

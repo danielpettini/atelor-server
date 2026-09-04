@@ -1,3 +1,7 @@
+// atelor-server/app.js
+
+// ********** IMPORTAÇÕES **********
+
 const cors = require("cors");
 const express = require("express");
 const { rateLimit } = require("express-rate-limit");
@@ -5,6 +9,8 @@ const mongoose = require("mongoose");
 
 const License = require("./License");
 const { loadUpdateMetadata } = require("./updateMetadata");
+// ********** MÓDULO PRINCIPAL **********
+
 const {
   NATIVE_MACHINE_ID_PATTERN,
   RequestValidationError,

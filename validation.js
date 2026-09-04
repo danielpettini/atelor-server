@@ -1,3 +1,7 @@
+// atelor-server/validation.js
+
+// ********** DECLARAÇÕES **********
+
 const MAX_LICENSE_KEY_LENGTH = 256;
 const LICENSE_KEY_CONTROL_PATTERN = /[\u0000-\u001F\u007F-\u009F]/u;
 const NATIVE_MACHINE_ID_PATTERN = /^[a-f0-9]{64}$/;

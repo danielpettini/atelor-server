@@ -1,4 +1,4 @@
-// License.js
+// atelor-server/License.js
 
 const mongoose = require("mongoose");
 
