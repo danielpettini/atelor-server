@@ -1,3 +1,7 @@
+// atelor-server/tests/app.test.cjs
+
+// ********** IMPORTAÇÕES **********
+
 const assert = require("node:assert/strict");
 const { once } = require("node:events");
 const test = require("node:test");
@@ -161,6 +165,8 @@ async function postJson(baseUrl, route, body, headers = {}) {
     body: JSON.stringify(body),
   });
 }
+
+// ********** TESTES **********
 
 test("CORS preserva Electron e loopback mesmo com origens adicionais", async () => {
   const allowed = resolveAllowedOrigins({

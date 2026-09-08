@@ -1,2 +1,14 @@
-node_modules
+node_modules/
 .env
+.env.*
+.env-*
+.env_*
+.env~
+!.env.example
+!.env.sample
+!.env.template
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks

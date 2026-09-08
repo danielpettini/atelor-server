@@ -1,3 +1,7 @@
+// atelor-server/tests/update-metadata.test.cjs
+
+// ********** IMPORTAÇÕES **********
+
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
@@ -22,6 +26,8 @@ function removeTemporaryDirectory(directory) {
   assert.ok(resolved.startsWith(expectedPrefix));
   fs.rmSync(resolved, { recursive: true, force: true });
 }
+
+// ********** TESTES **********
 
 test("valida e normaliza um manifesto completo", () => {
   const manifest = validateUpdateMetadata({

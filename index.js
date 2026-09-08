@@ -1,12 +1,13 @@
 // atelor-server/index.js
 
-require("dotenv").config();
-
 // ********** IMPORTAÇÕES **********
+
+require("dotenv").config();
 
 const mongoose = require("mongoose");
 
 const { createApp } = require("./app");
+const { formatSafeStartupError } = require("./safeStartupError");
 
 // ********** MÓDULO PRINCIPAL **********
 
@@ -42,14 +43,20 @@ async function start({ environment = process.env, logger = console } = {}) {
 
 if (require.main === module) {
   start().catch(async (error) => {
-    console.error("Não foi possível iniciar o servidor:", error);
+    console.error(
+      "Não foi possível iniciar o servidor:",
+      formatSafeStartupError(error),
+    );
     try {
       await mongoose.disconnect();
     } catch (disconnectError) {
-      console.error("Erro ao encerrar a conexão com o MongoDB:", disconnectError);
+      console.error(
+        "Erro ao encerrar a conexão com o MongoDB:",
+        formatSafeStartupError(disconnectError),
+      );
     }
     process.exitCode = 1;
   });
 }
 
-module.exports = { parsePort, start };
+module.exports = { formatSafeStartupError, parsePort, start };

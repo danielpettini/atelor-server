@@ -1,5 +1,7 @@
 // atelor-server/License.js
 
+// ********** IMPORTAÇÕES **********
+
 const mongoose = require("mongoose");
 
 // ********** SUBDOCUMENTO: HISTÓRICO DE ATIVAÇÕES **********

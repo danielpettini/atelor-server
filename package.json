@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
-    "test": "node --test tests/app.test.cjs tests/update-metadata.test.cjs"
+    "test": "node --test tests/app.test.cjs tests/safe-startup-error.test.cjs tests/update-metadata.test.cjs"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -18,5 +18,8 @@
     "express": "^4.19.2",
     "express-rate-limit": "8.6.2",
     "mongoose": "^8.4.1"
+  },
+  "overrides": {
+    "qs": "6.16.0"
   }
 }

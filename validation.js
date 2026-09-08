@@ -1,6 +1,6 @@
 // atelor-server/validation.js
 
-// ********** DECLARAÇÕES **********
+// ********** MÓDULO PRINCIPAL **********
 
 const MAX_LICENSE_KEY_LENGTH = 256;
 const LICENSE_KEY_CONTROL_PATTERN = /[\u0000-\u001F\u007F-\u009F]/u;
@@ -101,6 +101,8 @@ function parseLicenseCredentials(body, { allowLegacyProof = false } = {}) {
 
   return { licenseKey, machineId, legacyMachineId };
 }
+
+// ********** EXPORTAÇÕES **********
 
 module.exports = {
   LEGACY_MACHINE_ID_PATTERN,

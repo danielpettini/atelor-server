@@ -9,13 +9,13 @@ const mongoose = require("mongoose");
 
 const License = require("./License");
 const { loadUpdateMetadata } = require("./updateMetadata");
-// ********** MÓDULO PRINCIPAL **********
-
 const {
   NATIVE_MACHINE_ID_PATTERN,
   RequestValidationError,
   parseLicenseCredentials,
 } = require("./validation");
+
+// ********** CONSTANTES **********
 
 const HISTORY_LIMIT = 200;
 const DEFAULT_LOCAL_ORIGINS = [
@@ -23,6 +23,8 @@ const DEFAULT_LOCAL_ORIGINS = [
   "http://127.0.0.1:3000",
   "http://[::1]:3000",
 ];
+
+// ********** FUNÇÕES **********
 
 function parseTrustProxyHops(value) {
   if (value === undefined || value === null || value === "") return 0;
